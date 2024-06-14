@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Remove Music from Audio</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    margin-top: 50px;
+  }
+  audio {
+    margin-top: 20px;
+  }
+</style>
+</head>
+<body>
+  <h2>Remove Music from Audio</h2>
+  <input type="file" id="audioFile" accept="audio/*">
+  <br><br>
+  <button onclick="removeMusic()">Remove Music</button>
+  <br><br>
+  <audio controls id="outputAudio"></audio>
+
+  <script>
+    async function removeMusic() {
+      const audioFile = document.getElementById('audioFile').files[0];
+      if (!audioFile) {
+        alert('Please select an audio file.');
+        return;
+      }
+
+      try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const fileReader = new FileReader();
+
+        fileReader.onload = async function(event) {
+          const arrayBuffer = event.target.result;
+          const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+
+          const channels = audioBuffer.numberOfChannels;
+          const frames = audioBuffer.length;
+
+          for (let channel = 0; channel < channels; channel++) {
+            const channelData = audioBuffer.getChannelData(channel);
+            // Replace music removal logic with your own algorithm
+            // Here's a simple example: setting all values to zero
+            for (let i = 0; i < frames; i++) {
+              channelData[i] = 0;
+            }
+          }
+
+          const outputAudio = audioContext.createBufferSource();
+          outputAudio.buffer = audioBuffer;
+
+          const audioDestination = audioContext.createMediaStreamDestination();
+          outputAudio.connect(audioDestination);
+          
+          const audioElement = document.getElementById('outputAudio');
+          audioElement.srcObject = audioDestination.stream;
+          audioElement.controls = true;
+        };
+
+        fileReader.readAsArrayBuffer(audioFile);
+      } catch (error) {
+        console.error('Error processing audio:', error);
+        alert('Error processing audio. Please try again.');
+      }
+    }
+  </script>
+</body>
+</html>
